@@ -81,7 +81,7 @@
 # For file-based drivers, use this to create an empty detector view:
 #/vis/viewer/flush
 /vis/disable
-/gun/energy 1 GeV
+/gun/energy 2 GeV
 /run/beamOn 
 exit
 
