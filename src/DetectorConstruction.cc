@@ -309,10 +309,10 @@ G4VPhysicalVolume* B2aDetectorConstruction::DefineVolumes()
   myMPT->AddProperty ("ABSLENGTH",     PhotonEnergy_ABS,  Absorption,      nEntries_ABS);
   myMPT->AddProperty ("ELECTRONSCINTILLATIONYIELD", ElectronEnergy_SCY, ScintilYield, nEntries_SCY);
   myMPT->AddConstProperty ("SCINTILLATIONYIELD", 100/MeV );
-  myMPT->AddConstProperty ("RESOLUTIONSCALE", 1.0); //3.2 default value
+  myMPT->AddConstProperty ("RESOLUTIONSCALE", 1); //3.2 default value
   myMPT->AddConstProperty ("FASTTIMECONSTANT", 5.*ns);
   myMPT->AddConstProperty ("SLOWTIMECONSTANT", 15.*ns);
-  myMPT->AddConstProperty ("YIELDRATIO", 0.3);
+  myMPT->AddConstProperty ("YIELDRATIO", 0.5);
   myMPT->AddConstProperty ("FASTSCINTILLATIONRISETIME", 0.1 * ns);
   PbWO4->SetMaterialPropertiesTable(myMPT);
   
@@ -340,7 +340,7 @@ G4VPhysicalVolume* B2aDetectorConstruction::DefineVolumes()
      G4cout << "Air G4MaterialPropertiesTable" << G4endl;
      myMPT2->DumpTable();
    
-     //air->SetMaterialPropertiesTable(myMPT2);
+     air->SetMaterialPropertiesTable(myMPT2);
   //----------------------------------------------------------------------------------------------------
           
          
@@ -482,71 +482,87 @@ G4VPhysicalVolume* B2aDetectorConstruction::DefineVolumes()
   
   G4OpticalSurface* opCrystSurface = new G4OpticalSurface("CrystalSurface");
   opCrystSurface->SetType(dielectric_dielectric);
-  opCrystSurface->SetFinish(polished);
+  opCrystSurface->SetFinish(polishedair);
   opCrystSurface->SetModel(unified);
   
   G4OpticalSurface* opCrysttoWorld = new G4OpticalSurface("CrystalAirSurface");
   opCrystSurface->SetType(dielectric_dielectric);
-  opCrystSurface->SetFinish(polished);
+  opCrystSurface->SetFinish(polishedair);
   opCrystSurface->SetModel(unified);
   
-  //new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[0], fPhysicalChamber[1], opCrystSurface);
-  //new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[0], fPhysicalChamber[5], opCrystSurface);
-  new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[0], worldPV, opCrysttoWorld);
+  G4OpticalSurface* opPhotodetector = new G4OpticalSurface("CrystalPhotodetectorSurface");
+  opPhotodetector->SetType(dielectric_metal);
+  opPhotodetector->SetFinish(polished);
+  opPhotodetector->SetModel(unified);
   
-  //new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[1], fPhysicalChamber[2], opCrystSurface);
-  //new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[1], fPhysicalChamber[6], opCrystSurface);
-  new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[1], worldPV, opCrysttoWorld);
-    
-  //new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[2], fPhysicalChamber[3], opCrystSurface);
-  //new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[2], fPhysicalChamber[7], opCrystSurface);
-  new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[2], worldPV, opCrysttoWorld);
-    
-  //new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[3], fPhysicalChamber[4], opCrystSurface);
-  //new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[3], fPhysicalChamber[8], opCrystSurface);
-  new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[3], worldPV, opCrysttoWorld);
+  //top row, row 0
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[0], worldPV, opCrysttoWorld);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[0], fPhysicalChamber[1], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[0], fPhysicalChamber[5], opCrystSurface);
   
-  //new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[4], fPhysicalChamber[9], opCrystSurface);
-  new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[4], worldPV, opCrysttoWorld);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[1], fPhysicalChamber[0], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[1], fPhysicalChamber[2], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[1], fPhysicalChamber[6], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[1], worldPV, opCrysttoWorld);
   
-  for(int i = 0; i < 3; i++){
-  	int cryst;
-  	if(i == 0) cryst = 5;
-  	if(i == 1) cryst = 10;
-  	if(i == 2) cryst = 15;
-  	//new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[cryst], fPhysicalChamber[cryst+1], opCrystSurface);
-  	//new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[cryst], fPhysicalChamber[cryst+5], opCrystSurface);
-  	new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[cryst], worldPV, opCrysttoWorld);
- 
- 		//new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[cryst+1], fPhysicalChamber[cryst+2], opCrystSurface);
-  	//new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[cryst+1], fPhysicalChamber[cryst+6], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[2], fPhysicalChamber[1], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[2], fPhysicalChamber[3], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[2], fPhysicalChamber[7], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[2], worldPV, opCrysttoWorld);
   
-  	//new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[cryst+2], fPhysicalChamber[cryst+3], opCrystSurface);
-  	//new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[cryst+2], fPhysicalChamber[cryst+7], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[3], fPhysicalChamber[2], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[3], fPhysicalChamber[4], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[3], fPhysicalChamber[8], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[3], worldPV, opCrysttoWorld);
   
-  	//new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[cryst+3], fPhysicalChamber[cryst+4], opCrystSurface);
- 		//new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[cryst+3], fPhysicalChamber[cryst+8], opCrystSurface);
-
-  	//new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[cryst+4], fPhysicalChamber[cryst+9], opCrystSurface);
-  	new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[cryst+4], worldPV, opCrysttoWorld);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[4], fPhysicalChamber[3], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[4], fPhysicalChamber[9], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[4], worldPV, opCrysttoWorld);
+  
+  //rows 1, 2, 3
+  for(int i = 5; i < 25; i++){
+    new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], fPhysicalChamber[i-5], opCrystSurface);
+    new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], fPhysicalChamber[i+5], opCrystSurface);
+  	if( i == 5 || i == 10 || i == 15 || i == 9 || i == 14 || i == 19){
+			new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], fPhysicalChamber[i+1], opCrystSurface);
+      new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], worldPV, opCrysttoWorld);
+  	} else {
+  	  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], fPhysicalChamber[i+1], opCrystSurface);
+      new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], fPhysicalChamber[i-1], opCrystSurface);
+  	}
   }
   
-  //new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[20], fPhysicalChamber[21], opCrystSurface);
-  new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[20], worldPV, opCrysttoWorld);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[20], worldPV, opCrysttoWorld);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[20], fPhysicalChamber[21], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[20], fPhysicalChamber[15], opCrystSurface);
   
-  //new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[21], fPhysicalChamber[22], opCrystSurface);
-  new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[21], worldPV, opCrysttoWorld);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[21], fPhysicalChamber[20], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[21], fPhysicalChamber[22], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[21], fPhysicalChamber[16], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[21], worldPV, opCrysttoWorld);
   
-  //new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[22], fPhysicalChamber[23], opCrystSurface);
-  new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[22], worldPV, opCrysttoWorld);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[22], fPhysicalChamber[21], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[22], fPhysicalChamber[23], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[22], fPhysicalChamber[17], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[22], worldPV, opCrysttoWorld);
   
-  //new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[23], fPhysicalChamber[24], opCrystSurface);
-  new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[23], worldPV, opCrysttoWorld);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[23], fPhysicalChamber[22], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[23], fPhysicalChamber[24], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[23], fPhysicalChamber[18], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[23], worldPV, opCrysttoWorld);
   
-  new G4LogicalBorderSurface("CrystalSurface", fPhysicalChamber[24], worldPV, opCrysttoWorld);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[24], fPhysicalChamber[23], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[24], fPhysicalChamber[19], opCrystSurface);
+  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[24], worldPV, opCrysttoWorld);
+  
+  
+  for(int j = 0; j < 25; j++){
+  	for(int k = 25; k < 75; k++){
+  	  new G4LogicalBorderSurface("CrystalToPhotodetector", fPhysicalChamber[j], fPhysicalChamber[k], opPhotodetector);
+  	}
+  }
   
   //---------------------------------------------------------------------------------------------------------------
-  
   
   
   
@@ -556,12 +572,18 @@ G4VPhysicalVolume* B2aDetectorConstruction::DefineVolumes()
   G4double specularLobe[nEntries_RI];
   G4double specularSpike[nEntries_RI];
   G4double backScatter[nEntries_RI];
-  G4double reflectivity[nEntries_RI];
+  G4double reflectivityC[nEntries_RI];
+  G4double reflectivityA[nEntries_RI];
+  G4double reflectivityP[nEntries_RI];
+  G4double efficiency[nEntries_RI];
   for( int i = 0; i < nEntries_RI; i++){
-  	specularLobe[i] = 0.7;
-  	specularSpike[i] = 0.2;
-  	backScatter[i] = 0.1;
-  	reflectivity[i] = 0.9;
+  	specularLobe[i] = 0.4509;
+  	specularSpike[i] = 0.42;
+  	backScatter[i] = 0.111;
+  	reflectivityC[i] = 0.9;
+  	reflectivityA[i] = 1;
+  	reflectivityP[i] = 0;
+  	efficiency[i] = 1;
   }
   
   G4MaterialPropertiesTable* crystSurfTable = new G4MaterialPropertiesTable();
@@ -569,15 +591,25 @@ G4VPhysicalVolume* B2aDetectorConstruction::DefineVolumes()
   crystSurfTable->AddProperty("SPECULARLOBECONSTANT", PhotonEnergy_RI, specularLobe, nEntries_RI);
   crystSurfTable->AddProperty("SPECULARSPIKECONSTANT", PhotonEnergy_RI, specularSpike, nEntries_RI);
   crystSurfTable->AddProperty("BACKSCATTERCONSTANT", PhotonEnergy_RI, backScatter, nEntries_RI);
-  crystSurfTable->AddProperty("REFLECTIVITY", PhotonEnergy_RI, reflectivity, nEntries_RI);
+  crystSurfTable->AddProperty("REFLECTIVITY", PhotonEnergy_RI, reflectivityC, nEntries_RI);
+  //crystSurfTable->AddProperty("EFFICIENCY", PhotonEnergy_RI, efficiency, nEntries_RI);
   
-  opCrysttoWorld->SetMaterialPropertiesTable(crystSurfTable);
+  G4MaterialPropertiesTable* crystToWorldTable = new G4MaterialPropertiesTable();
+  crystSurfTable->AddProperty("RINDEX", PhotonEnergy_RI, RefractiveIndex, nEntries_RI);
+  crystSurfTable->AddProperty("SPECULARLOBECONSTANT", PhotonEnergy_RI, specularLobe, nEntries_RI);
+  crystSurfTable->AddProperty("SPECULARSPIKECONSTANT", PhotonEnergy_RI, specularSpike, nEntries_RI);
+  crystSurfTable->AddProperty("BACKSCATTERCONSTANT", PhotonEnergy_RI, backScatter, nEntries_RI);
+  crystSurfTable->AddProperty("REFLECTIVITY", PhotonEnergy_RI, reflectivityA, nEntries_RI);  
+  
+  G4MaterialPropertiesTable* crystToPhotodetector = new G4MaterialPropertiesTable();
+  crystToPhotodetector->AddProperty("REFLECTIVITY", PhotonEnergy_RI, reflectivityP, nEntries_RI);
+  crystToPhotodetector->AddProperty("EFFICIENCY", PhotonEnergy_RI, efficiency, nEntries_RI);
+  
+  opCrystSurface->SetMaterialPropertiesTable(crystSurfTable);
+  opCrysttoWorld->SetMaterialPropertiesTable(crystToWorldTable);
+  opPhotodetector->SetMaterialPropertiesTable(crystToPhotodetector);
   
   //--------------------------------
-  
-  
-  
-  
   
   
   // Always return the physical world

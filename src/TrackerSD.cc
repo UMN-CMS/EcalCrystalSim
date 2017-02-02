@@ -67,7 +67,10 @@
   std::vector<int> collectedPhoton;
   std::vector<int> totalPhoton;
   std::vector<int> trackIDs;
-  TH1D* fractionalCollection = new TH1D("collection", "Optical Photon Fractional Collection", 100, 0, 0.05);
+  TH1I* fractionalCollection = new TH1I("collection", "Optical Photon Fractional Collection", 100, 0, 20);
+  TCanvas *c1 = new TCanvas("c1", "Total Energy Deposition in 25 Crystals", 200,10,700,900);
+  TPad *pad1 = new TPad("pad1", "The pad with the 3D Hist",0.03,0.62,0.50,0.92,21);
+ 
   ofstream out;
 B2TrackerSD::B2TrackerSD(const G4String& name,
                          const G4String& hitsCollectionName) 
@@ -77,6 +80,7 @@ B2TrackerSD::B2TrackerSD(const G4String& name,
   collectionName.insert(hitsCollectionName);
   collectedPhoton.push_back(0);
   totalPhoton.push_back(0);
+
   
   /*
   //make some tree things
@@ -109,9 +113,17 @@ B2TrackerSD::B2TrackerSD(const G4String& name,
 
 B2TrackerSD::~B2TrackerSD() 
 { 
+	
 	collectedPhoton.clear();
 	totalPhoton.clear();
 	out.close();
+	pad1->Draw();
+	
+	
+	delete pad1;
+	delete c1;
+	delete fractionalCollection;
+	
 	//TFile* out = new TFile("/home/crystSim/TreeDataStorage/60-1GeV_tracks.root", "RECREATE");
 	//outtreeTrack->Write();
 	//out->Close();
@@ -148,15 +160,21 @@ G4bool B2TrackerSD::ProcessHits(G4Step* aStep,
   for( int i = 0; i < trackIDs.size(); i++){
   	if( partID == trackIDs[i]){
   		found = true;
+  		break;
   	}//end if 
   }//end for
+  
   if( particle == "opticalphoton" && found == false){
   	trackIDs.push_back(partID);
   	int eventNum = totalPhoton.size() - 1;
   	totalPhoton[eventNum] += 1;
-  	if(next == "Photodetector"){
-  		collectedPhoton[eventNum] += 1;
-  	}//end if
+  	
+  }//end if
+  
+  if(next == "Photodetector" || next == "World" && particle == "opticalphoton"){
+  	int eventNum = totalPhoton.size() - 1;
+  	collectedPhoton[eventNum] += 1;
+  	aStep->GetTrack()->SetTrackStatus(fStopAndKill);
   }//end if
   
   // Kill the photon if it starts wandering around too much
@@ -211,11 +229,24 @@ void B2TrackerSD::EndOfEvent(G4HCofThisEvent*)
 	totalPhoton.push_back(0);
   	collectedPhoton.push_back(0);
   	trackIDs.clear();
+  	double average = 0;
+  	double total = 0;
+  	for( int i = 0; i < collectedPhoton.size(); i++){
+		total += collectedPhoton[i];
+	}
+	average = total/collectedPhoton.size();
   	double fracCollection = 100 * double(collectedPhoton[events - 1])/double(totalPhoton[events - 1]);
   	G4cout << "In event " << events << " there were a total of " << G4endl;
   	G4cout << totalPhoton[events - 1] << " optical photons generated." << G4endl;
   	G4cout << collectedPhoton[events - 1] << " of these were collected. The collection rate is" << G4endl;
-  	G4cout << fracCollection << "% \n" << G4endl; 
+  	G4cout << fracCollection << "% \n"; 
+  	G4cout << average << " is the average number of collected photons, so far." << G4endl << G4endl;
+  	
+  	pad1->Draw();
+  	fractionalCollection->Fill(collectedPhoton[events - 1]);
+  	fractionalCollection->Draw();
+  	
+  	
   	 
   	out.open("/home/crystSim/photonStats001GEV.txt", std::ofstream::app);
   	out << totalPhoton[events - 1] << " " << collectedPhoton[events - 1] << std::endl;
