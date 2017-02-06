@@ -36,6 +36,7 @@
 #include "G4ios.hh"
 
 #include "TH1.h"
+#include "TH1D.h"
 #include "TH1I.h"
 #include "TCanvas.h"
 #include "TPad.h"
@@ -67,11 +68,13 @@
   std::vector<int> collectedPhoton;
   std::vector<int> totalPhoton;
   std::vector<int> trackIDs;
+  std::vector<std::vector<int>> efficiencies;
   TH1I* fractionalCollection = new TH1I("collection", "Optical Photon Fractional Collection", 100, 0, 20);
-  TCanvas *c1 = new TCanvas("c1", "Total Energy Deposition in 25 Crystals", 200,10,700,900);
-  TPad *pad1 = new TPad("pad1", "The pad with the 3D Hist",0.03,0.62,0.50,0.92,21);
- 
+  TH1D* crystalLoc = new TH1D("crystalLoc", "location from face of crystal, normalized", 50, 0, 1);
   ofstream out;
+  
+  
+  
 B2TrackerSD::B2TrackerSD(const G4String& name,
                          const G4String& hitsCollectionName) 
  : G4VSensitiveDetector(name),
@@ -80,8 +83,11 @@ B2TrackerSD::B2TrackerSD(const G4String& name,
   collectionName.insert(hitsCollectionName);
   collectedPhoton.push_back(0);
   totalPhoton.push_back(0);
-
   
+  for(int i = 0; i < 52; i++){
+  	std::vector<int> temp;
+  	efficiencies.push_back(temp);
+  }
   /*
   //make some tree things
     outtreeTrack = new TTree("track1GeV", "1GeV");
@@ -117,12 +123,6 @@ B2TrackerSD::~B2TrackerSD()
 	collectedPhoton.clear();
 	totalPhoton.clear();
 	out.close();
-	pad1->Draw();
-	
-	
-	delete pad1;
-	delete c1;
-	delete fractionalCollection;
 	
 	//TFile* out = new TFile("/home/crystSim/TreeDataStorage/60-1GeV_tracks.root", "RECREATE");
 	//outtreeTrack->Write();
@@ -152,7 +152,7 @@ void B2TrackerSD::Initialize(G4HCofThisEvent* hce)
 G4bool B2TrackerSD::ProcessHits(G4Step* aStep, 
                                      G4TouchableHistory*)
 {  
-  // Collecting and counting optical photons
+  // Collecting and counting optical photons and efficiency
   G4String particle = aStep->GetTrack()->GetParticleDefinition()->GetParticleName();
   G4String next = aStep->GetTrack()->GetNextVolume()->GetName();
   G4int partID = aStep->GetTrack()->GetTrackID();
@@ -168,12 +168,15 @@ G4bool B2TrackerSD::ProcessHits(G4Step* aStep,
   	trackIDs.push_back(partID);
   	int eventNum = totalPhoton.size() - 1;
   	totalPhoton[eventNum] += 1;
-  	
+  	G4ThreeVector pos = aStep->GetTrack()->GetPosition();
+  	G4double zpos = (110 + pos.z())/220;
+  	int bin = int(crystalLoc->FindBin(double(zpos)));
+  	efficiencies[bin].push_back(int(partID));
   }//end if
   
-  if(next == "Photodetector" || next == "World" && particle == "opticalphoton"){
+  if(next == "Photodetector" && particle == "opticalphoton"){
   	int eventNum = totalPhoton.size() - 1;
-  	collectedPhoton[eventNum] += 1;
+  	collectedPhoton.push_back(int(partID));
   	aStep->GetTrack()->SetTrackStatus(fStopAndKill);
   }//end if
   
@@ -183,8 +186,8 @@ G4bool B2TrackerSD::ProcessHits(G4Step* aStep,
   	aStep->GetTrack()->SetTrackStatus(fStopAndKill);
   }
   
-  G4double edep = aStep->GetTotalEnergyDeposit();
-  	if(edep != 0){
+  //G4double edep = aStep->GetTotalEnergyDeposit();
+  	//if(edep != 0){
 		// writing it all to the TTree:
 		//   but first lets define some values
 		/*meventID = events.size();
@@ -204,16 +207,16 @@ G4bool B2TrackerSD::ProcessHits(G4Step* aStep,
 		
 		// now we can actually write it to the tree
 		outtreeTrack->Fill(); */
-	}
+	//}
 	
-  if (edep==0.) return false;
+  //if (edep==0.) return false;
   return true;
   B2TrackerHit* newHit = new B2TrackerHit();
 
   newHit->SetTrackID  (aStep->GetTrack()->GetTrackID());
   newHit->SetChamberNb(aStep->GetPreStepPoint()->GetTouchableHandle()
                                                ->GetCopyNumber());
-  newHit->SetEdep(edep);
+  //newHit->SetEdep(edep);
   newHit->SetPos (aStep->GetPostStepPoint()->GetPosition());
 
   fHitsCollection->insert( newHit );
@@ -225,32 +228,39 @@ G4bool B2TrackerSD::ProcessHits(G4Step* aStep,
 
 void B2TrackerSD::EndOfEvent(G4HCofThisEvent*)
 {	
+	//check efficiencies
+	std::vector<double> efficiency;
+	for(int k = 0; k < efficiencies.size(); k++){ //bins
+		double count = 0;
+		for(int l = 0; l < efficiencies[k].size(); l++){ //vector in bin
+			for(int j = 0; j < collectedPhoton.size(); j++){ 
+				if(collectedPhoton[j] == efficiencies[k][l]){
+					count += 1;
+				}
+			}
+		}
+		efficiency.push_back(count/double(efficiencies[k].size()));
+		//crystalLoc->Fill((k+1),efficiency[k]);
+	}	
+	
 	int events = collectedPhoton.size();
 	totalPhoton.push_back(0);
   	collectedPhoton.push_back(0);
   	trackIDs.clear();
+  	
   	double average = 0;
   	double total = 0;
   	for( int i = 0; i < collectedPhoton.size(); i++){
 		total += collectedPhoton[i];
 	}
-	average = total/collectedPhoton.size();
-  	double fracCollection = 100 * double(collectedPhoton[events - 1])/double(totalPhoton[events - 1]);
-  	G4cout << "In event " << events << " there were a total of " << G4endl;
-  	G4cout << totalPhoton[events - 1] << " optical photons generated." << G4endl;
-  	G4cout << collectedPhoton[events - 1] << " of these were collected. The collection rate is" << G4endl;
-  	G4cout << fracCollection << "% \n"; 
-  	G4cout << average << " is the average number of collected photons, so far." << G4endl << G4endl;
+	
   	
-  	pad1->Draw();
-  	fractionalCollection->Fill(collectedPhoton[events - 1]);
-  	fractionalCollection->Draw();
-  	
-  	
-  	 
-  	out.open("/home/crystSim/photonStats001GEV.txt", std::ofstream::app);
-  	out << totalPhoton[events - 1] << " " << collectedPhoton[events - 1] << std::endl;
-  	out.close();
+  	//print out efficiencies
+  	for(int i = 0; i < efficiency.size(); i++){
+  		G4cout << "Bin: " << i << "  Efficiency: " << efficiency[i] << G4endl;
+  		efficiencies[i].clear();
+  	}
+  	efficiency.clear();
   if ( verboseLevel>1 ) { 
   	
      G4int nofHits = fHitsCollection->entries();

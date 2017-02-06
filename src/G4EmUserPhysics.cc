@@ -108,7 +108,7 @@ void G4EmUserPhysics::ConstructProcess()
   //theScintillationProcess->DumpPhysicsTable();
   //theRayleighScatteringProcess->DumpPhysicsTable();
   
-  theCerenkovProcess->SetMaxNumPhotonsPerStep(20);
+  theCerenkovProcess->SetMaxNumPhotonsPerStep(0);
   theCerenkovProcess->SetMaxBetaChangePerStep(10.0);
   theCerenkovProcess->SetTrackSecondariesFirst(true);
   

@@ -523,12 +523,17 @@ G4VPhysicalVolume* B2aDetectorConstruction::DefineVolumes()
   for(int i = 5; i < 25; i++){
     new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], fPhysicalChamber[i-5], opCrystSurface);
     new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], fPhysicalChamber[i+5], opCrystSurface);
-  	if( i == 5 || i == 10 || i == 15 || i == 9 || i == 14 || i == 19){
-			new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], fPhysicalChamber[i+1], opCrystSurface);
-      new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], worldPV, opCrysttoWorld);
-  	} else {
-  	  new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], fPhysicalChamber[i+1], opCrystSurface);
-      new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], fPhysicalChamber[i-1], opCrystSurface);
+  	if( i == 5 || i == 10 || i == 15){
+		new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], fPhysicalChamber[i+1], opCrystSurface);
+      		new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], worldPV, opCrysttoWorld);
+  	} 
+  	else if(i == 9 || i == 14 || i == 19){
+  		new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], fPhysicalChamber[i-1], opCrystSurface);
+      		new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], worldPV, opCrysttoWorld);
+  	}
+  	else {
+  	  	new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], fPhysicalChamber[i+1], opCrystSurface);
+      		new G4LogicalBorderSurface("Crystal0", fPhysicalChamber[i], fPhysicalChamber[i-1], opCrystSurface);
   	}
   }
   
